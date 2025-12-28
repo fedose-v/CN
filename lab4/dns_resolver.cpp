@@ -20,16 +20,8 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	try
-	{
-		DnsResolver resolver;
-		resolver.Resolve(domain, type);
-	}
-	catch (const std::exception& e)
-	{
-		std::cerr << "Fatal Error: " << e.what() << std::endl;
-		return EXIT_FAILURE;
-	}
+	DnsResolver resolver;
+	resolver.Resolve(domain, type);
 
 	return EXIT_SUCCESS;
 }

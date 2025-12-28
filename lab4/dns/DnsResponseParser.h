@@ -100,13 +100,11 @@ private:
 		m_pos += 4;
 	}
 
-	DnsRecord ParseRecord()
-	{
+	DnsRecord ParseRecord() {
 		DnsRecord record;
 		record.name = ReadName();
 
-		if (m_pos + 10 > m_size)
-			throw std::runtime_error("Packet overflow reading record header");
+		if (m_pos + 10 > m_size) throw std::runtime_error("Packet overflow reading record header");
 
 		uint16_t type = (m_buffer[m_pos] << 8) | m_buffer[m_pos + 1];
 		record.type = type;
@@ -114,69 +112,26 @@ private:
 		uint16_t dataLen = (m_buffer[m_pos + 8] << 8) | m_buffer[m_pos + 9];
 		m_pos += 10;
 
-		if (m_pos + dataLen > m_size)
-			throw std::runtime_error("Packet overflow reading rdata");
+		if (m_pos + dataLen > m_size) throw std::runtime_error("Packet overflow reading rdata");
 
-		if (type == 1 && dataLen == 4)
-		{
+		if (type == 1 && dataLen == 4) {
 			char ip[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &m_buffer[m_pos], ip, INET_ADDRSTRLEN);
 			record.rdata = std::string(ip);
-		}
-		else if (type == 28 && dataLen == 16)
-		{
+		} else if (type == 28 && dataLen == 16) {
 			char ip[INET6_ADDRSTRLEN];
 			inet_ntop(AF_INET6, &m_buffer[m_pos], ip, INET6_ADDRSTRLEN);
 			record.rdata = std::string(ip);
-		}
-		else if (type == 2 || type == 5)
-		{
+		} else if (type == 2 || type == 5) {
 			int oldPos = m_pos;
 			record.rdata = ReadName();
 			m_pos = oldPos;
-		}
-		else if (type == 48)
-		{
-			record.rdata = "DNSKEY (Hex): " + ToHex(m_pos, dataLen);
-		}
-		else if (type == 43)
-		{
-			record.rdata = "DS (Hex): " + ToHex(m_pos, dataLen);
-		}
-		else if (type == 46)
-		{
-			record.rdata = "RRSIG (Hex): " + ToHex(m_pos, dataLen);
-		}
-		else if (type == 47)
-		{
-			record.rdata = "NSEC Record";
-		}
-		else if (type == 50)
-		{
-			record.rdata = "NSEC3 Record";
-		}
-		else
-		{
-			record.rdata = "(binary data type " + std::to_string(type) + ")";
+		} else {
+			record.rdata = "(binary)";
 		}
 
 		m_pos += dataLen;
 		return record;
-	}
-
-	std::string ToHex(int start, int length)
-	{
-		static const char hex[] = "0123456789ABCDEF";
-		std::string result;
-		for (int i = 0; i < length; ++i)
-		{
-			if (start + i >= m_size)
-				break;
-			unsigned char byte = m_buffer[start + i];
-			result += hex[byte >> 4];
-			result += hex[byte & 0x0F];
-		}
-		return result;
 	}
 
 	const std::vector<uint8_t>& m_buffer;
